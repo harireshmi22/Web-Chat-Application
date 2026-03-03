@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import {
     AppShell, Box, Stack, ScrollArea, Text, Group, Avatar,
     TextInput, ActionIcon, Tooltip, Indicator, Paper, Divider,
@@ -18,6 +18,14 @@ import useAuth from "../hooks/useAuth";
 import classes from "./chat.module.css";
 
 export default function ChatPage() {
+    return (
+        <Suspense fallback={<Box style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><Loader color="violet" size="lg" /></Box>}>
+            <ChatPageContent />
+        </Suspense>
+    );
+}
+
+function ChatPageContent() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { user, loading: authLoading, getToken } = useAuth();
