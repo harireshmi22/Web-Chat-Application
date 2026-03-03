@@ -1,0 +1,131 @@
+.navbar {
+    padding: var(--mantine-spacing-md);
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background-color: var(--mantine-color-body);
+    border-right: 1px solid var(--mantine-color-gray-2);
+    overflow: hidden;
+}
+
+[data-mantine-color-scheme="dark"] .navbar {
+    border-right-color: var(--mantine-color-dark-5);
+    background-color: var(--mantine-color-dark-7);
+}
+
+.section {
+    margin-bottom: var(--mantine-spacing-xs);
+}
+
+.userBtn {
+    border-radius: var(--mantine-radius-md);
+    transition: background 0.15s ease;
+}
+
+.userBtn:hover {
+    background-color: var(--mantine-color-gray-0);
+}
+
+[data-mantine-color-scheme="dark"] .userBtn:hover {
+    background-color: var(--mantine-color-dark-6);
+}
+
+.mainLinks {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.mainLink {
+    display: flex;
+    align-items: center;
+    width: 100%;
+    font-size: var(--mantine-font-size-sm);
+    padding: 9px var(--mantine-spacing-sm);
+    border-radius: var(--mantine-radius-md);
+    font-weight: 500;
+    color: var(--mantine-color-gray-7);
+    transition: background 0.15s ease;
+}
+
+.mainLink:hover {
+    background-color: var(--mantine-color-violet-0);
+    color: var(--mantine-color-violet-7);
+}
+
+.mainLinkActive {
+    background-color: var(--mantine-color-violet-1);
+    color: var(--mantine-color-violet-7);
+}
+
+[data-mantine-color-scheme="dark"] .mainLink {
+    color: var(--mantine-color-dark-1);
+}
+
+[data-mantine-color-scheme="dark"] .mainLink:hover {
+    background-color: var(--mantine-color-dark-6);
+    color: var(--mantine-color-white);
+}
+
+[data-mantine-color-scheme="dark"] .mainLinkActive {
+    background-color: var(--mantine-color-violet-9);
+    color: var(--mantine-color-white);
+}
+
+.mainLinkInner {
+    display: flex;
+    align-items: center;
+    flex: 1;
+}
+
+.mainLinkIcon {
+    margin-right: var(--mantine-spacing-sm);
+    color: var(--mantine-color-gray-5);
+}
+
+.mainLinkActive .mainLinkIcon {
+    color: var(--mantine-color-violet-6);
+}
+
+[data-mantine-color-scheme="dark"] .mainLinkIcon {
+    color: var(--mantine-color-dark-3);
+}
+
+.mainLinkBadge {
+    padding: 0;
+    width: 20px;
+    height: 20px;
+    pointer-events: none;
+}
+
+.contacts {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding-bottom: var(--mantine-spacing-md);
+}
+
+.contactRow {
+    display: block;
+    width: 100%;
+    padding: 8px var(--mantine-spacing-xs);
+    border-radius: var(--mantine-radius-md);
+    transition: background 0.15s ease;
+    cursor: pointer;
+}
+
+.contactRow:hover {
+    background-color: var(--mantine-color-gray-0);
+}
+
+.contactRowActive {
+    background-color: var(--mantine-color-violet-0);
+}
+
+[data-mantine-color-scheme="dark"] .contactRow:hover {
+    background-color: var(--mantine-color-dark-6);
+}
+
+[data-mantine-color-scheme="dark"] .contactRowActive {
+    background-color: var(--mantine-color-dark-5);
+}

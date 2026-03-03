@@ -1,0 +1,16 @@
+.user {
+    display: block;
+    width: 100%;
+    padding: var(--mantine-spacing-sm) var(--mantine-spacing-xs);
+    color: var(--mantine-color-text);
+    border-radius: var(--mantine-radius-md);
+    transition: background 0.15s ease;
+}
+
+.user:hover {
+    background-color: var(--mantine-color-violet-0);
+}
+
+[data-mantine-color-scheme="dark"] .user:hover {
+    background-color: var(--mantine-color-dark-6);
+}
