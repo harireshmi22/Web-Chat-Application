@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import {
-    AppShell, Box, Stack, ScrollArea, Text, Group, Avatar,
+    Box, Stack, ScrollArea, Text, Group, Avatar,
     TextInput, ActionIcon, Tooltip, Indicator, Paper, Divider,
     Badge, Loader, ThemeIcon, Menu, Modal, Button,
 } from "@mantine/core";
@@ -11,7 +11,7 @@ import {
     IconPhone, IconVideo, IconDotsVertical, IconSearch,
     IconWifi, IconWifiOff, IconMessage2, IconEdit, IconTrash, IconCheck,
 } from "@tabler/icons-react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { NavbarSearch } from "../components/NavbarSearch/NavbarSearch";
 import { useSocket } from "../hooks/useSocket";
 import useAuth from "../hooks/useAuth";
@@ -20,9 +20,16 @@ import classes from "./chat.module.css";
 export default function ChatPage() {
     return (
         <Suspense fallback={<Box style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center" }}><Loader color="violet" size="lg" /></Box>}>
-            <ChatPageContent />
+            <ChatPageGuard />
         </Suspense>
     );
+}
+
+function ChatPageGuard() {
+    const pathname = usePathname();
+    // Don't render DM chat when not on /chat
+    if (pathname !== "/chat") return null;
+    return <ChatPageContent />;
 }
 
 function ChatPageContent() {
@@ -200,196 +207,194 @@ function ChatPageContent() {
     );
 
     return (
-        <AppShell padding={0}>
-            <Box className={classes.layout}>
+        <Box className={classes.layout}>
 
-                {/* Sidebar */}
-                <Box className={classes.sidebar}>
-                    <NavbarSearch
-                        onlineUsers={onlineUsers}
-                        conversations={conversations}
-                        activeConv={activeConv?._id}
-                        onConvSelect={(conv) => setActiveConv(conv)}
-                    />
-                </Box>
-
-                {/* Chat Area */}
-                <Box className={classes.chatArea}>
-
-                    {!activeConv ? (
-                        // Empty state
-                        <Box style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
-                            <ThemeIcon size={72} radius="xl" variant="light" color="violet">
-                                <IconMessage2 size={36} />
-                            </ThemeIcon>
-                            <Text fw={700} size="lg">Select a conversation</Text>
-                            <Text size="sm" c="dimmed">Choose a contact from the sidebar to start chatting</Text>
-                        </Box>
-                    ) : (
-                        <>
-                            {/* Header */}
-                            <Box className={classes.chatHeader}>
-                                <Group justify="space-between" w="100%">
-                                    <Group gap="sm">
-                                        <Indicator color={onlineUsers.includes(otherUser?._id) || otherUser?.isOnline ? "green" : "gray"} size={10} offset={2} position="bottom-end">
-                                            <Avatar radius="xl" color="violet" size="md" src={otherUser?.avatar}>
-                                                {(otherUser?.displayName || otherUser?.username || "?")[0].toUpperCase()}
-                                            </Avatar>
-                                        </Indicator>
-                                        <Box>
-                                            <Group gap={6}>
-                                                <Text fw={700} size="sm">{otherUser?.displayName || otherUser?.username}</Text>
-                                                {isConnected ? (
-                                                    <Group gap={4}><IconWifi size={11} color="var(--mantine-color-green-6)" /><Text size="xs" c="green" fw={500}>Connected</Text></Group>
-                                                ) : (
-                                                    <Group gap={4}><IconWifiOff size={11} color="var(--mantine-color-red-6)" /><Text size="xs" c="red" fw={500}>Disconnected</Text></Group>
-                                                )}
-                                            </Group>
-                                            <Text size="xs" c="dimmed">{otherUser?.username}</Text>
-                                        </Box>
-                                    </Group>
-                                    <Group gap="xs">
-                                        <Tooltip label="Voice call" withArrow><ActionIcon variant="subtle" color="gray" radius="xl" size="lg"><IconPhone size={18} stroke={1.5} /></ActionIcon></Tooltip>
-                                        <Tooltip label="Video call" withArrow><ActionIcon variant="subtle" color="gray" radius="xl" size="lg"><IconVideo size={18} stroke={1.5} /></ActionIcon></Tooltip>
-                                        <Tooltip label="Search messages" withArrow><ActionIcon variant="subtle" color="gray" radius="xl" size="lg"><IconSearch size={18} stroke={1.5} /></ActionIcon></Tooltip>
-                                    </Group>
-                                </Group>
-                            </Box>
-
-                            <Divider />
-
-                            {/* Messages */}
-                            <ScrollArea className={classes.messages} viewportRef={viewport}>
-                                <Stack gap="md" p="lg">
-                                    {msgLoading && <Box ta="center"><Loader color="violet" size="sm" /></Box>}
-
-                                    {!msgLoading && messages.length === 0 && (
-                                        <Box ta="center" py="xl">
-                                            <ThemeIcon size={56} radius="xl" variant="light" color="violet" mx="auto" mb="md">
-                                                <IconMessage2 size={28} />
-                                            </ThemeIcon>
-                                            <Text fw={600} size="sm">Start the conversation!</Text>
-                                            <Text size="xs" c="dimmed" mt={4}>Say hello to {otherUser?.displayName || otherUser?.username}</Text>
-                                        </Box>
-                                    )}
-
-                                    {messages.map((msg) => {
-                                        const isOwn = msg.own || msg.sender?._id === user?._id || msg.sender === user?._id;
-                                        const senderName = msg.sender?.displayName || msg.sender?.username || msg.author || otherUser?.displayName || otherUser?.username || "Unknown";
-                                        const msgDate = msg.createdAt ? new Date(msg.createdAt) : null;
-                                        const timeStr = msgDate && !isNaN(msgDate) ? msgDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : (msg.time || "");
-                                        return (
-                                            <Group key={msg._id} align="flex-start" justify={isOwn ? "flex-end" : "flex-start"} gap="sm">
-                                                {!isOwn && (
-                                                    <Avatar radius="xl" color="blue" size="md" src={msg.sender?.avatar}>
-                                                        {senderName[0]?.toUpperCase()}
-                                                    </Avatar>
-                                                )}
-                                                <Box style={{ maxWidth: "62%" }}>
-                                                    {!isOwn && (
-                                                        <Group gap={6} mb={4}>
-                                                            <Text size="xs" fw={700}>{senderName}</Text>
-                                                            <Text size="xs" c="dimmed">{timeStr}</Text>
-                                                        </Group>
-                                                    )}
-
-                                                    {editingId === msg._id ? (
-                                                        <Group gap="xs">
-                                                            <TextInput
-                                                                value={editText}
-                                                                onChange={(e) => setEditText(e.currentTarget.value)}
-                                                                onKeyDown={(e) => e.key === "Enter" && handleEdit(msg._id)}
-                                                                size="sm" radius="xl" autoFocus
-                                                                style={{ flex: 1 }}
-                                                            />
-                                                            <ActionIcon color="green" variant="filled" radius="xl" onClick={() => handleEdit(msg._id)}><IconCheck size={14} /></ActionIcon>
-                                                            <ActionIcon color="red" variant="light" radius="xl" onClick={() => setEditingId(null)}><IconTrash size={14} /></ActionIcon>
-                                                        </Group>
-                                                    ) : (
-                                                        <Menu shadow="md" position={isOwn ? "left" : "right"} withArrow>
-                                                            <Menu.Target>
-                                                                <Paper
-                                                                    px="md" py="sm" radius="xl"
-                                                                    className={isOwn ? classes.bubbleOwn : classes.bubbleOther}
-                                                                    style={{ cursor: "pointer", opacity: msg.isDeleted ? 0.5 : 1 }}
-                                                                >
-                                                                    <Text size="sm" style={{ lineHeight: 1.6, wordBreak: "break-word", fontStyle: msg.isDeleted ? "italic" : "normal" }}>
-                                                                        {msg.isDeleted ? "🗑 Message deleted" : msg.text}
-                                                                    </Text>
-                                                                    {(msg.isEdited || msg.editHistory?.length > 0) && !msg.isDeleted && <Text size="xs" c="dimmed">(edited)</Text>}
-                                                                </Paper>
-                                                            </Menu.Target>
-                                                            {isOwn && !msg.isDeleted && (
-                                                                <Menu.Dropdown style={{ background: "#1E293B", borderColor: "#334155" }}>
-                                                                    <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => { setEditingId(msg._id); setEditText(msg.text); }}>Edit</Menu.Item>
-                                                                    <Menu.Item color="red" leftSection={<IconTrash size={14} />} onClick={() => handleDelete(msg._id)}>Delete</Menu.Item>
-                                                                </Menu.Dropdown>
-                                                            )}
-                                                        </Menu>
-                                                    )}
-
-                                                    {isOwn && (
-                                                        <Text size="xs" c="dimmed" ta="right" mt={4}>
-                                                            {timeStr}
-                                                        </Text>
-                                                    )}
-                                                </Box>
-                                                {isOwn && (
-                                                    <Avatar radius="xl" color="violet" size="md" src={user?.avatar}>
-                                                        {user?.displayName?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase()}
-                                                    </Avatar>
-                                                )}
-                                            </Group>
-                                        );
-                                    })}
-
-                                    {typingText && (
-                                        <Group gap={6} align="center" pl={4}>
-                                            <Loader size={14} color="violet" type="dots" />
-                                            <Text size="xs" c="dimmed" fs="italic">{typingText}</Text>
-                                        </Group>
-                                    )}
-                                </Stack>
-                            </ScrollArea>
-
-                            <Divider />
-
-                            {/* Input bar */}
-                            <Box className={classes.inputBar}>
-                                <Group gap="xs" align="center" style={{ width: "100%" }}>
-                                    <Tooltip label="Attach file" withArrow>
-                                        <ActionIcon variant="subtle" color="gray" radius="xl" size="lg"><IconPaperclip size={18} stroke={1.5} /></ActionIcon>
-                                    </Tooltip>
-                                    <TextInput
-                                        placeholder={`Message ${otherUser?.displayName || otherUser?.username || ""}…`}
-                                        className={classes.input}
-                                        radius="xl" size="md"
-                                        value={input}
-                                        onChange={(e) => { setInput(e.currentTarget.value); emitTyping(); }}
-                                        onKeyDown={handleKeyDown}
-                                        rightSection={
-                                            <Tooltip label="Emoji" withArrow>
-                                                <ActionIcon variant="subtle" color="gray" radius="xl"><IconMoodSmile size={18} stroke={1.5} /></ActionIcon>
-                                            </Tooltip>
-                                        }
-                                    />
-                                    {input.trim() ? (
-                                        <Tooltip label="Send (Enter)" withArrow>
-                                            <ActionIcon size="lg" radius="xl" variant="filled" color="violet" onClick={handleSend}>
-                                                <IconSend size={17} stroke={1.5} />
-                                            </ActionIcon>
-                                        </Tooltip>
-                                    ) : (
-                                        <ActionIcon size="lg" radius="xl" variant="light" color="violet">
-                                            <IconMicrophone size={17} stroke={1.5} />
-                                        </ActionIcon>
-                                    )}
-                                </Group>
-                            </Box>
-                        </>
-                    )}
-                </Box>
+            {/* Sidebar */}
+            <Box className={classes.sidebar}>
+                <NavbarSearch
+                    onlineUsers={onlineUsers}
+                    conversations={conversations}
+                    activeConv={activeConv?._id}
+                    onConvSelect={(conv) => setActiveConv(conv)}
+                />
             </Box>
-        </AppShell>
+
+            {/* Chat Area */}
+            <Box className={classes.chatArea}>
+
+                {!activeConv ? (
+                    // Empty state
+                    <Box style={{ flex: 1, display: "flex", alignItems: "center", justifyContent: "center", flexDirection: "column", gap: 16 }}>
+                        <ThemeIcon size={72} radius="xl" variant="light" color="violet">
+                            <IconMessage2 size={36} />
+                        </ThemeIcon>
+                        <Text fw={700} size="lg">Select a conversation</Text>
+                        <Text size="sm" c="dimmed">Choose a contact from the sidebar to start chatting</Text>
+                    </Box>
+                ) : (
+                    <>
+                        {/* Header */}
+                        <Box className={classes.chatHeader}>
+                            <Group justify="space-between" w="100%">
+                                <Group gap="sm">
+                                    <Indicator color={onlineUsers.includes(otherUser?._id) || otherUser?.isOnline ? "green" : "gray"} size={10} offset={2} position="bottom-end">
+                                        <Avatar radius="xl" color="violet" size="md" src={otherUser?.avatar}>
+                                            {(otherUser?.displayName || otherUser?.username || "?")[0].toUpperCase()}
+                                        </Avatar>
+                                    </Indicator>
+                                    <Box>
+                                        <Group gap={6}>
+                                            <Text fw={700} size="sm">{otherUser?.displayName || otherUser?.username}</Text>
+                                            {isConnected ? (
+                                                <Group gap={4}><IconWifi size={11} color="var(--mantine-color-green-6)" /><Text size="xs" c="green" fw={500}>Connected</Text></Group>
+                                            ) : (
+                                                <Group gap={4}><IconWifiOff size={11} color="var(--mantine-color-red-6)" /><Text size="xs" c="red" fw={500}>Disconnected</Text></Group>
+                                            )}
+                                        </Group>
+                                        <Text size="xs" c="dimmed">{otherUser?.username}</Text>
+                                    </Box>
+                                </Group>
+                                <Group gap="xs">
+                                    <Tooltip label="Voice call" withArrow><ActionIcon variant="subtle" color="gray" radius="xl" size="lg"><IconPhone size={18} stroke={1.5} /></ActionIcon></Tooltip>
+                                    <Tooltip label="Video call" withArrow><ActionIcon variant="subtle" color="gray" radius="xl" size="lg"><IconVideo size={18} stroke={1.5} /></ActionIcon></Tooltip>
+                                    <Tooltip label="Search messages" withArrow><ActionIcon variant="subtle" color="gray" radius="xl" size="lg"><IconSearch size={18} stroke={1.5} /></ActionIcon></Tooltip>
+                                </Group>
+                            </Group>
+                        </Box>
+
+                        <Divider />
+
+                        {/* Messages */}
+                        <ScrollArea className={classes.messages} viewportRef={viewport}>
+                            <Stack gap="md" p="lg">
+                                {msgLoading && <Box ta="center"><Loader color="violet" size="sm" /></Box>}
+
+                                {!msgLoading && messages.length === 0 && (
+                                    <Box ta="center" py="xl">
+                                        <ThemeIcon size={56} radius="xl" variant="light" color="violet" mx="auto" mb="md">
+                                            <IconMessage2 size={28} />
+                                        </ThemeIcon>
+                                        <Text fw={600} size="sm">Start the conversation!</Text>
+                                        <Text size="xs" c="dimmed" mt={4}>Say hello to {otherUser?.displayName || otherUser?.username}</Text>
+                                    </Box>
+                                )}
+
+                                {messages.map((msg) => {
+                                    const isOwn = msg.own || msg.sender?._id === user?._id || msg.sender === user?._id;
+                                    const senderName = msg.sender?.displayName || msg.sender?.username || msg.author || otherUser?.displayName || otherUser?.username || "Unknown";
+                                    const msgDate = msg.createdAt ? new Date(msg.createdAt) : null;
+                                    const timeStr = msgDate && !isNaN(msgDate) ? msgDate.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : (msg.time || "");
+                                    return (
+                                        <Group key={msg._id} align="flex-start" justify={isOwn ? "flex-end" : "flex-start"} gap="sm">
+                                            {!isOwn && (
+                                                <Avatar radius="xl" color="blue" size="md" src={msg.sender?.avatar}>
+                                                    {senderName[0]?.toUpperCase()}
+                                                </Avatar>
+                                            )}
+                                            <Box style={{ maxWidth: "62%" }}>
+                                                {!isOwn && (
+                                                    <Group gap={6} mb={4}>
+                                                        <Text size="xs" fw={700}>{senderName}</Text>
+                                                        <Text size="xs" c="dimmed">{timeStr}</Text>
+                                                    </Group>
+                                                )}
+
+                                                {editingId === msg._id ? (
+                                                    <Group gap="xs">
+                                                        <TextInput
+                                                            value={editText}
+                                                            onChange={(e) => setEditText(e.currentTarget.value)}
+                                                            onKeyDown={(e) => e.key === "Enter" && handleEdit(msg._id)}
+                                                            size="sm" radius="xl" autoFocus
+                                                            style={{ flex: 1 }}
+                                                        />
+                                                        <ActionIcon color="green" variant="filled" radius="xl" onClick={() => handleEdit(msg._id)}><IconCheck size={14} /></ActionIcon>
+                                                        <ActionIcon color="red" variant="light" radius="xl" onClick={() => setEditingId(null)}><IconTrash size={14} /></ActionIcon>
+                                                    </Group>
+                                                ) : (
+                                                    <Menu shadow="md" position={isOwn ? "left" : "right"} withArrow>
+                                                        <Menu.Target>
+                                                            <Paper
+                                                                px="md" py="sm" radius="xl"
+                                                                className={isOwn ? classes.bubbleOwn : classes.bubbleOther}
+                                                                style={{ cursor: "pointer", opacity: msg.isDeleted ? 0.5 : 1 }}
+                                                            >
+                                                                <Text size="sm" style={{ lineHeight: 1.6, wordBreak: "break-word", fontStyle: msg.isDeleted ? "italic" : "normal" }}>
+                                                                    {msg.isDeleted ? "🗑 Message deleted" : msg.text}
+                                                                </Text>
+                                                                {(msg.isEdited || msg.editHistory?.length > 0) && !msg.isDeleted && <Text size="xs" c="dimmed">(edited)</Text>}
+                                                            </Paper>
+                                                        </Menu.Target>
+                                                        {isOwn && !msg.isDeleted && (
+                                                            <Menu.Dropdown style={{ background: "#1E293B", borderColor: "#334155" }}>
+                                                                <Menu.Item leftSection={<IconEdit size={14} />} onClick={() => { setEditingId(msg._id); setEditText(msg.text); }}>Edit</Menu.Item>
+                                                                <Menu.Item color="red" leftSection={<IconTrash size={14} />} onClick={() => handleDelete(msg._id)}>Delete</Menu.Item>
+                                                            </Menu.Dropdown>
+                                                        )}
+                                                    </Menu>
+                                                )}
+
+                                                {isOwn && (
+                                                    <Text size="xs" c="dimmed" ta="right" mt={4}>
+                                                        {timeStr}
+                                                    </Text>
+                                                )}
+                                            </Box>
+                                            {isOwn && (
+                                                <Avatar radius="xl" color="violet" size="md" src={user?.avatar}>
+                                                    {user?.displayName?.[0]?.toUpperCase() || user?.username?.[0]?.toUpperCase()}
+                                                </Avatar>
+                                            )}
+                                        </Group>
+                                    );
+                                })}
+
+                                {typingText && (
+                                    <Group gap={6} align="center" pl={4}>
+                                        <Loader size={14} color="violet" type="dots" />
+                                        <Text size="xs" c="dimmed" fs="italic">{typingText}</Text>
+                                    </Group>
+                                )}
+                            </Stack>
+                        </ScrollArea>
+
+                        <Divider />
+
+                        {/* Input bar */}
+                        <Box className={classes.inputBar}>
+                            <Group gap="xs" align="center" style={{ width: "100%" }}>
+                                <Tooltip label="Attach file" withArrow>
+                                    <ActionIcon variant="subtle" color="gray" radius="xl" size="lg"><IconPaperclip size={18} stroke={1.5} /></ActionIcon>
+                                </Tooltip>
+                                <TextInput
+                                    placeholder={`Message ${otherUser?.displayName || otherUser?.username || ""}…`}
+                                    className={classes.input}
+                                    radius="xl" size="md"
+                                    value={input}
+                                    onChange={(e) => { setInput(e.currentTarget.value); emitTyping(); }}
+                                    onKeyDown={handleKeyDown}
+                                    rightSection={
+                                        <Tooltip label="Emoji" withArrow>
+                                            <ActionIcon variant="subtle" color="gray" radius="xl"><IconMoodSmile size={18} stroke={1.5} /></ActionIcon>
+                                        </Tooltip>
+                                    }
+                                />
+                                {input.trim() ? (
+                                    <Tooltip label="Send (Enter)" withArrow>
+                                        <ActionIcon size="lg" radius="xl" variant="filled" color="violet" onClick={handleSend}>
+                                            <IconSend size={17} stroke={1.5} />
+                                        </ActionIcon>
+                                    </Tooltip>
+                                ) : (
+                                    <ActionIcon size="lg" radius="xl" variant="light" color="violet">
+                                        <IconMicrophone size={17} stroke={1.5} />
+                                    </ActionIcon>
+                                )}
+                            </Group>
+                        </Box>
+                    </>
+                )}
+            </Box>
+        </Box>
     );
 }

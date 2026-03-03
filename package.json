@@ -15,6 +15,8 @@
     "@mantine/hooks": "^8.3.15",
     "@mantine/notifications": "^8.3.15",
     "@tabler/icons-react": "^3.38.0",
+    "@tailwindcss/postcss": "^4.2.1",
+    "autoprefixer": "^10.4.20",
     "bcryptjs": "^3.0.3",
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^9.2.3",
@@ -25,9 +27,7 @@
     "socket.io-client": "^4.8.3"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4",
     "eslint": "^9",
-    "eslint-config-next": "16.1.6",
-    "tailwindcss": "^4"
+    "eslint-config-next": "16.1.6"
   }
 }
